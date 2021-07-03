@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var score = 0
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
@@ -22,12 +23,18 @@ struct ContentView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .autocapitalization(.none)
                     .padding()
+                Text ("Score: \(score)")
                 List(usedWords, id: \.self) {
                     Image(systemName: "\($0.count).circle")
                     Text($0)
                 }
             }
             .navigationTitle(rootWord)
+            .navigationBarItems(trailing:
+                    Button(action: startGame) {
+                        Text("New Game")
+                    }
+            )
             .onAppear(perform: startGame)
             .alert(isPresented: $showingError) {
                 Alert(title: Text(errorTitle), message: Text(errorMessage), dismissButton: .default(Text("OK")))
@@ -55,12 +62,19 @@ struct ContentView: View {
             return
         }
         
+        guard tooShort(word: answer) else {
+            wordError(title: "Too short", message: "Words must be at least 3 letters")
+            return
+        }
         
+        score += newWord.count
         usedWords.insert(answer, at: 0)
         newWord = ""
     }
     
     func startGame() {
+        usedWords = []
+        score = 0
         if let startWordsURL = Bundle.main.url(forResource: "start", withExtension: "txt") {
             if let startWords = try? String(contentsOf: startWordsURL){
                 let allWords = startWords.components(separatedBy: "\n")
@@ -73,7 +87,7 @@ struct ContentView: View {
     }
     
     func isOriginal(word: String) -> Bool {
-        !usedWords.contains(word)
+        !usedWords.contains(word) && !(word == rootWord)
     }
     
     func isPossible(word: String) -> Bool {
@@ -87,6 +101,12 @@ struct ContentView: View {
         }
         return true
     }
+    
+    func tooShort(word: String) -> Bool {
+        return word.count > 2
+    }
+    
+    
     
     func isReal(word: String) -> Bool {
         let checker = UITextChecker ()
